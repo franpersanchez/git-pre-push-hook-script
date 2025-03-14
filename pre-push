@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# Command variables
+TEST_COMMAND="npm run test"
+START_COMMAND="npm run start"
+
+
+# Color and style codes
+RED='\033[31m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+# Run your test command
+echo -e "${BOLD}${YELLOW}Running tests before push...${RESET}"
+$TEST_COMMAND
+
+# Check the result of the test command
+if [ $? -ne 0 ]; then
+  echo -e "${BOLD}${RED}Tests failed. Aborting push.${RESET}"
+  exit 1
+fi
+
+echo -e "${BOLD}${GREEN}Tests passed${RESET}"
+
+sleep 2
+
+echo -e "${BOLD}${YELLOW}Running server before push...${RESET}"
+
+timeout 10s $START_COMMAND
+
+# Check if the process finished due to timeout or another error
+if [ $? -eq 124 ]; then
+  # 124 is the exit code for timeout when the time is exceeded
+  echo -e "${BOLD}${GREEN}Server started correctly and was interrupted by timeout.${RESET}"
+  exit 0
+elif [ $? -ne 0 ]; then
+  # If the process finishes with any other exit code than 0
+  echo -e "${BOLD}${RED}Code failed. Aborting push.${RESET}"
+  exit 1
+fi
+
+exit 0
